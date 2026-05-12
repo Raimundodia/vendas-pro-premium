@@ -1,4 +1,6 @@
 {
+  "name": "vendas-pro-premium",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -10,6 +12,9 @@
     "react": "latest",
     "react-dom": "latest",
     "@supabase/supabase-js": "latest",
-    "lucide-react": "latest"
+    "lucide-react": "latest",
+    "clsx": "latest",
+    "tailwind-merge": "latest"
   }
 }
+
