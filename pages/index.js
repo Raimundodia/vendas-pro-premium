@@ -1,65 +1,61 @@
-import 'styles/globals.css';
 import React from 'react';
-// Se o seu projeto não tiver lucide-react, me avise
-import { Users, Package, ShoppingCart, Plus, ArrowUpRight } from "lucide-react";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-black text-white p-4 font-sans" style={{ backgroundColor: '#000000' }}>
+    <div style={{ backgroundColor: '#000000', minHeight: '100vh', color: '#ffffff', padding: '20px', fontFamily: 'sans-serif' }}>
+      
       {/* Header */}
-      <div className="mb-8 flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Gestão Pro</h1>
-          <p className="text-gray-400 text-sm">Controle de clientes e estoque</p>
+      <div style={{ marginBottom: '30px' }}>
+        <h1 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0' }}>Gestão Pro</h1>
+        <p style={{ color: '#888', fontSize: '14px', marginTop: '5px' }}>Controle de clientes e estoque</p>
+      </div>
+
+      {/* Cards de Resumo - Estilo igual ao seu index(1).html */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '30px' }}>
+        <div style={{ backgroundColor: '#111', border: '1px solid #222', padding: '20px', borderRadius: '15px' }}>
+          <p style={{ color: '#888', fontSize: '14px', margin: '0 0 10px 0' }}>Total de Clientes</p>
+          <h2 style={{ fontSize: '28px', margin: '0' }}>0</h2>
+        </div>
+        <div style={{ backgroundColor: '#111', border: '1px solid #222', padding: '20px', borderRadius: '15px' }}>
+          <p style={{ color: '#888', fontSize: '14px', margin: '0 0 10px 0' }}>Itens em Estoque</p>
+          <h2 style={{ fontSize: '28px', margin: '0' }}>0</h2>
+        </div>
+        <div style={{ backgroundColor: '#111', border: '1px solid #222', padding: '20px', borderRadius: '15px' }}>
+          <p style={{ color: '#888', fontSize: '14px', margin: '0 0 10px 0' }}>Vendas Hoje</p>
+          <h2 style={{ fontSize: '28px', margin: '0', color: '#10b981' }}>R$ 0,00</h2>
         </div>
       </div>
 
-      {/* Cards de Resumo Estilo Original */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <div className="bg-[#111111] border border-[#222222] p-5 rounded-2xl">
-          <p className="text-gray-400 text-sm font-medium mb-1">Total de Clientes</p>
-          <h2 className="text-3xl font-bold text-white">0</h2>
-        </div>
-        <div className="bg-[#111111] border border-[#222222] p-5 rounded-2xl">
-          <p className="text-gray-400 text-sm font-medium mb-1">Itens em Estoque</p>
-          <h2 className="text-3xl font-bold text-white">0</h2>
-        </div>
-        <div className="bg-[#111111] border border-[#222222] p-5 rounded-2xl">
-          <p className="text-gray-400 text-sm font-medium mb-1">Vendas Hoje</p>
-          <h2 className="text-3xl font-bold text-white text-green-500">R$ 0,00</h2>
-        </div>
-      </div>
-
-      {/* Botões de Ação Direta */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-8">
-        <button className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-xl transition-all">
-          <Plus size={20} /> NOVA VENDA
+      {/* Botões de Ação */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px', marginBottom: '30px' }}>
+        <button style={{ backgroundColor: '#2563eb', color: 'white', border: 'none', padding: '15px', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer' }}>
+          ➕ NOVA VENDA
         </button>
-        <button className="flex items-center justify-center gap-2 bg-[#1a1a1a] border border-[#333333] text-white py-4 px-6 rounded-xl transition-all">
-          <Users size={20} /> CLIENTES
+        <button style={{ backgroundColor: '#1a1a1a', color: 'white', border: '1px solid #333', padding: '15px', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer' }}>
+          👥 CLIENTES
         </button>
-        <button className="flex items-center justify-center gap-2 bg-[#1a1a1a] border border-[#333333] text-white py-4 px-6 rounded-xl transition-all">
-          <Package size={20} /> ESTOQUE
+        <button style={{ backgroundColor: '#1a1a1a', color: 'white', border: '1px solid #333', padding: '15px', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer' }}>
+          📦 ESTOQUE
         </button>
       </div>
 
-      {/* Tabela de Atividade Recente */}
-      <div className="bg-[#111111] border border-[#222222] rounded-2xl overflow-hidden">
-        <div className="p-5 border-b border-[#222222]">
-          <h3 className="font-bold text-lg text-white text-center md:text-left">Últimas Movimentações</h3>
+      {/* Tabela de Atividade */}
+      <div style={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '15px', overflow: 'hidden' }}>
+        <div style={{ padding: '15px', borderBottom: '1px solid #222' }}>
+          <h3 style={{ margin: '0', fontSize: '18px' }}>Últimas Movimentações</h3>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-[#1a1a1a] text-gray-500 uppercase text-xs">
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <thead style={{ backgroundColor: '#1a1a1a', color: '#555', fontSize: '12px' }}>
               <tr>
-                <th className="px-6 py-3 font-medium">Data</th>
-                <th className="px-6 py-3 font-medium">Cliente</th>
-                <th className="px-6 py-3 font-medium text-right">Valor</th>
+                <th style={{ padding: '12px 15px' }}>DATA</th>
+                <th style={{ padding: '12px 15px' }}>CLIENTE</th>
+                <th style={{ padding: '12px 15px', textAlign: 'right' }}>VALOR</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#222222]">
+            <tbody>
               <tr>
-                <td colSpan="3" className="px-6 py-10 text-center text-gray-500 italic">
+                <td colSpan="3" style={{ padding: '40px', textAlign: 'center', color: '#555', fontStyle: 'italic' }}>
                   Nenhuma movimentação registrada hoje.
                 </td>
               </tr>
