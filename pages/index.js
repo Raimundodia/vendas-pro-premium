@@ -1,3 +1,4 @@
+import 'styles/globals.css';
 import React from 'react';
 // Se o seu projeto não tiver lucide-react, me avise
 import { Users, Package, ShoppingCart, Plus, ArrowUpRight } from "lucide-react";
