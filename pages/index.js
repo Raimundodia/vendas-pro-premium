@@ -1,71 +1,71 @@
-import { useState } from 'react';
-import { 
-  LayoutDashboard, 
-  ShoppingCart, 
-  Users, 
-  Plus, 
-  DollarSign, 
-  TrendingUp, 
-  Clock 
-} from 'lucide-react';
+import React from 'react';
+// Se o seu projeto não tiver lucide-react, me avise
+import { Users, Package, ShoppingCart, Plus, ArrowUpRight } from "lucide-react";
 
-export default function App() {
-  const [view, setView] = useState('dashboard');
-
+export default function Home() {
   return (
-    <div className="min-h-screen bg-[#0f0f1a] text-white font-sans">
-      <header className="p-6 bg-[#1a1a2e]/80 backdrop-blur-md border-b border-gray-800 flex justify-between items-center sticky top-0 z-10">
+    <div className="min-h-screen bg-black text-white p-4 font-sans" style={{ backgroundColor: '#000000' }}>
+      {/* Header */}
+      <div className="mb-8 flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-black bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
-            VendasPRO
-          </h1>
-          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Premium Edition</p>
+          <h1 className="text-2xl font-bold text-white">Gestão Pro</h1>
+          <p className="text-gray-400 text-sm">Controle de clientes e estoque</p>
         </div>
-        <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl flex items-center justify-center font-bold">
-          R
+      </div>
+
+      {/* Cards de Resumo Estilo Original */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="bg-[#111111] border border-[#222222] p-5 rounded-2xl">
+          <p className="text-gray-400 text-sm font-medium mb-1">Total de Clientes</p>
+          <h2 className="text-3xl font-bold text-white">0</h2>
         </div>
-      </header>
-
-      <main className="p-6 pb-32 max-w-md mx-auto text-center">
-        <div className="grid grid-cols-2 gap-4 mb-8">
-          <div className="bg-[#1e1e3a] p-5 rounded-3xl border border-gray-800 shadow-xl">
-            <p className="text-gray-400 text-[10px] font-bold uppercase mb-2">Faturamento</p>
-            <h3 className="text-2xl font-black text-green-400">R$ 0,00</h3>
-          </div>
-          <div className="bg-[#1e1e3a] p-5 rounded-3xl border border-gray-800 shadow-xl">
-            <p className="text-gray-400 text-[10px] font-bold uppercase mb-2">Vendas</p>
-            <h3 className="text-2xl font-black text-white">0</h3>
-          </div>
+        <div className="bg-[#111111] border border-[#222222] p-5 rounded-2xl">
+          <p className="text-gray-400 text-sm font-medium mb-1">Itens em Estoque</p>
+          <h2 className="text-3xl font-bold text-white">0</h2>
         </div>
-
-        <button 
-          onClick={() => alert('Sistema Online!')}
-          className="w-full py-6 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-3xl font-black text-lg shadow-2xl flex items-center justify-center gap-3 mb-10"
-        >
-          <Plus size={24} strokeWidth={3} />
-          NOVA VENDA
-        </button>
-
-        <div className="bg-[#1e1e3a]/50 p-8 rounded-2xl border border-gray-800/50 flex flex-col items-center justify-center">
-          <p className="font-bold text-sm text-gray-400">O seu sistema está pronto!</p>
-          <p className="text-xs text-gray-600 mt-2">Aguardando conexão com banco de dados.</p>
+        <div className="bg-[#111111] border border-[#222222] p-5 rounded-2xl">
+          <p className="text-gray-400 text-sm font-medium mb-1">Vendas Hoje</p>
+          <h2 className="text-3xl font-bold text-white text-green-500">R$ 0,00</h2>
         </div>
-      </main>
+      </div>
 
-      <nav className="fixed bottom-0 left-0 right-0 bg-[#1a1a2e]/95 backdrop-blur-lg border-t border-gray-800 flex justify-around py-5 px-4 rounded-t-[32px]">
-        <button onClick={() => setView('dashboard')} className="flex flex-col items-center gap-1 text-purple-500">
-          <LayoutDashboard size={24} />
-          <span className="text-[10px] font-bold">Painel</span>
+      {/* Botões de Ação Direta */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-8">
+        <button className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-xl transition-all">
+          <Plus size={20} /> NOVA VENDA
         </button>
-        <button onClick={() => setView('sales')} className="flex flex-col items-center gap-1 text-gray-500">
-          <ShoppingCart size={24} />
-          <span className="text-[10px] font-bold">Vendas</span>
+        <button className="flex items-center justify-center gap-2 bg-[#1a1a1a] border border-[#333333] text-white py-4 px-6 rounded-xl transition-all">
+          <Users size={20} /> CLIENTES
         </button>
-        <button onClick={() => setView('customers')} className="flex flex-col items-center gap-1 text-gray-500">
-          <Users size={24} />
-          <span className="text-[10px] font-bold">Clientes</span>
+        <button className="flex items-center justify-center gap-2 bg-[#1a1a1a] border border-[#333333] text-white py-4 px-6 rounded-xl transition-all">
+          <Package size={20} /> ESTOQUE
         </button>
-      </nav>
+      </div>
+
+      {/* Tabela de Atividade Recente */}
+      <div className="bg-[#111111] border border-[#222222] rounded-2xl overflow-hidden">
+        <div className="p-5 border-b border-[#222222]">
+          <h3 className="font-bold text-lg text-white text-center md:text-left">Últimas Movimentações</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-[#1a1a1a] text-gray-500 uppercase text-xs">
+              <tr>
+                <th className="px-6 py-3 font-medium">Data</th>
+                <th className="px-6 py-3 font-medium">Cliente</th>
+                <th className="px-6 py-3 font-medium text-right">Valor</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#222222]">
+              <tr>
+                <td colSpan="3" className="px-6 py-10 text-center text-gray-500 italic">
+                  Nenhuma movimentação registrada hoje.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
