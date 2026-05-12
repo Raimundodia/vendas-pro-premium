@@ -1,78 +1,90 @@
 import React, { useState } from 'react';
+import { createClient } from '@supabase/supabase-js';
+
+// Conexão automática com seu Supabase (usando suas variáveis de ambiente)
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
 
 export default function Home() {
-  // Lógica para controlar o que aparece na tela
   const [view, setView] = useState('dashboard');
+  const [nome, setNome] = useState('');
+  const [whatsapp, setWhatsapp] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  // Função para voltar ao início
-  const irParaDashboard = () => setView('dashboard');
+  // Função para Salvar o Cliente no Banco
+  const salvarCliente = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    const { error } = await supabase
+      .from('clientes')
+      .insert([{ nome: nome, whatsapp: whatsapp }]);
+
+    if (error) {
+      alert("Erro ao salvar: " + error.message);
+    } else {
+      alert("Cliente cadastrado com sucesso!");
+      setNome('');
+      setWhatsapp('');
+      setView('dashboard');
+    }
+    setLoading(false);
+  };
 
   return (
     <div style={{ backgroundColor: '#000000', minHeight: '100vh', color: '#ffffff', padding: '20px', fontFamily: 'sans-serif' }}>
       
-      {/* Header com clique no título para voltar */}
-      <div style={{ marginBottom: '30px', cursor: 'pointer' }} onClick={irParaDashboard}>
+      {/* Header */}
+      <div style={{ marginBottom: '30px' }} onClick={() => setView('dashboard')}>
         <h1 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0' }}>Gestão Pro</h1>
-        <p style={{ color: '#888', fontSize: '14px', marginTop: '5px' }}>{view === 'dashboard' ? 'Painel de Controle' : '← Voltar ao Início'}</p>
+        <p style={{ color: '#888', fontSize: '14px' }}>{view === 'dashboard' ? 'Painel de Controle' : '← Voltar'}</p>
       </div>
 
       {view === 'dashboard' ? (
-        <>
-          {/* Cards de Resumo */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '15px', marginBottom: '30px' }}>
-            <div style={{ backgroundColor: '#111', border: '1px solid #222', padding: '20px', borderRadius: '15px' }}>
-              <p style={{ color: '#888', fontSize: '12px', margin: '0' }}>CLIENTES</p>
-              <h2 style={{ fontSize: '24px', margin: '5px 0' }}>0</h2>
-            </div>
-            <div style={{ backgroundColor: '#111', border: '1px solid #222', padding: '20px', borderRadius: '15px' }}>
-              <p style={{ color: '#888', fontSize: '12px', margin: '0' }}>ESTOQUE</p>
-              <h2 style={{ fontSize: '24px', margin: '5px 0' }}>0</h2>
-            </div>
-          </div>
-
-          {/* Botões de Ação - AGORA COM CLIQUE */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px', marginBottom: '30px' }}>
-            <button 
-              onClick={() => alert('Abrir tela de Nova Venda')}
-              style={{ backgroundColor: '#2563eb', color: 'white', border: 'none', padding: '18px', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', fontSize: '16px' }}>
-              ➕ NOVA VENDA
-            </button>
-            
-            <button 
-              onClick={() => setView('clientes')}
-              style={{ backgroundColor: '#1a1a1a', color: 'white', border: '1px solid #333', padding: '18px', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', fontSize: '16px' }}>
-              👥 VER CLIENTES
-            </button>
-
-            <button 
-              onClick={() => setView('estoque')}
-              style={{ backgroundColor: '#1a1a1a', color: 'white', border: '1px solid #333', padding: '18px', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', fontSize: '16px' }}>
-              📦 VER ESTOQUE
-            </button>
-          </div>
-
-          {/* Tabela de Atividade */}
-          <div style={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '15px', overflow: 'hidden' }}>
-            <div style={{ padding: '15px', borderBottom: '1px solid #222', textAlign: 'center' }}>
-              <h3 style={{ margin: '0', fontSize: '16px', color: '#888' }}>Movimentações Recentes</h3>
-            </div>
-            <div style={{ padding: '40px', textAlign: 'center', color: '#444' }}>
-              Nenhum dado registrado.
-            </div>
-          </div>
-        </>
-      ) : (
-        /* Tela Simples de Visualização (Clientes ou Estoque) */
-        <div style={{ backgroundColor: '#111', padding: '20px', borderRadius: '15px', border: '1px solid #333' }}>
-          <h2 style={{ textTransform: 'uppercase' }}>{view}</h2>
-          <p style={{ color: '#888' }}>Carregando dados do banco...</p>
-          <button 
-            onClick={irParaDashboard}
-            style={{ marginTop: '20px', backgroundColor: 'transparent', border: '1px solid #555', color: 'white', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer' }}>
-            Voltar
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
+          <button onClick={() => setView('novo_cliente')} style={{ backgroundColor: '#2563eb', color: 'white', border: 'none', padding: '18px', borderRadius: '12px', fontWeight: 'bold', fontSize: '16px' }}>
+            👤 CADASTRAR CLIENTE
+          </button>
+          
+          <button onClick={() => setView('estoque')} style={{ backgroundColor: '#1a1a1a', color: 'white', border: '1px solid #333', padding: '18px', borderRadius: '12px', fontWeight: 'bold' }}>
+            📦 VER ESTOQUE
           </button>
         </div>
-      )}
+      ) : view === 'novo_cliente' ? (
+        /* FORMULÁRIO DE CADASTRO - ESTILO SEU INDEX.HTML */
+        <div style={{ backgroundColor: '#111', padding: '20px', borderRadius: '15px', border: '1px solid #333' }}>
+          <h2 style={{ marginBottom: '20px' }}>Novo Cliente</h2>
+          
+          <form onSubmit={salvarCliente}>
+            <label style={{ color: '#888', display: 'block', marginBottom: '5px' }}>Nome do Cliente</label>
+            <input 
+              required
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              placeholder="Ex: João Silva"
+              style={{ width: '100%', padding: '12px', marginBottom: '20px', borderRadius: '8px', border: '1px solid #333', backgroundColor: '#000', color: '#fff' }}
+            />
+
+            <label style={{ color: '#888', display: 'block', marginBottom: '5px' }}>WhatsApp / Telefone</label>
+            <input 
+              required
+              value={whatsapp}
+              onChange={(e) => setWhatsapp(e.target.value)}
+              placeholder="(00) 00000-0000"
+              style={{ width: '100%', padding: '12px', marginBottom: '20px', borderRadius: '8px', border: '1px solid #333', backgroundColor: '#000', color: '#fff' }}
+            />
+
+            <button 
+              type="submit" 
+              disabled={loading}
+              style={{ width: '100%', backgroundColor: '#10b981', color: 'white', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold' }}>
+              {loading ? 'Salvando...' : 'CONFIRMAR CADASTRO'}
+            </button>
+          </form>
+        </div>
+      ) : null}
     </div>
   );
 }
