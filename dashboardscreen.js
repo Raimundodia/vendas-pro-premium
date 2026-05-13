@@ -1,3 +1,11 @@
+type DashboardStats = {
+  clientes: number;
+  estoque: number;
+};
+
+// Aplique no State do React para o TypeScript validar os números (2 e 3 do print)
+const [stats, setStats] = useState<DashboardStats>({ clientes: 0, estoque: 0 });
+
 import React, { useState, useEffect } from 'react';
 import {
   View,
