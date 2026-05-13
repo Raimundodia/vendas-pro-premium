@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = (supabaseUrl && supabaseAnonKey) ? createClient(supabaseUrl, supabaseAnonKey) : null;
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL || '', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '');
 
 export default function Home() {
   const [view, setView] = useState('dashboard');
@@ -11,112 +9,115 @@ export default function Home() {
   const [data, setData] = useState({ clientes: [], estoque: [] });
   
   // Estados para formulários
-  const [formCliente, setFormCliente] = useState({ nome: '', whatsapp: '' });
-  const [formEstoque, setFormEstoque] = useState({ produto: '', quantidade: '' });
+  const [fCliente, setFCliente] = useState({ nome: '', whatsapp: '', saldo_devedor: 0 });
+  const [fEstoque, setFEstoque] = useState({ produto: '', quantidade: '', tipo: 'Unidade', custo: '', venda: '' });
 
-  useEffect(() => {
-    carregarDados();
-  }, []);
+  useEffect(() => { carregarDados(); }, []);
 
   async function carregarDados() {
-    if (!supabase) return;
-    const { data: clientes } = await supabase.from('clientes').select('*').order('created_at', { ascending: false });
-    const { data: estoque } = await supabase.from('estoque').select('*').order('produto');
-    setData({ clientes: clientes || [], estoque: estoque || [] });
+    const { data: cl } = await supabase.from('clientes').select('*').order('nome');
+    const { data: est } = await supabase.from('estoque').select('*').order('produto');
+    setData({ clientes: cl || [], estoque: est || [] });
   }
 
   const salvarCliente = async (e) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.from('clientes').insert([formCliente]);
-    if (!error) {
-      alert("✅ Cliente salvo!");
-      setFormCliente({ nome: '', whatsapp: '' });
-      await carregarDados();
-      setView('dashboard');
-    }
+    await supabase.from('clientes').insert([fCliente]);
+    setFCliente({ nome: '', whatsapp: '', saldo_devedor: 0 });
+    await carregarDados();
+    setView('dashboard');
     setLoading(false);
   };
 
   const salvarEstoque = async (e) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.from('estoque').insert([{ 
-      produto: formEstoque.produto, 
-      quantidade: parseInt(formEstoque.quantidade) 
+    await supabase.from('estoque').insert([{ 
+      produto: fEstoque.produto, 
+      quantidade: Number(fEstoque.quantidade),
+      tipo_unidade: fEstoque.tipo,
+      custo_total: Number(fEstoque.custo),
+      preco_venda: Number(fEstoque.venda)
     }]);
-    if (!error) {
-      alert("✅ Item adicionado ao estoque!");
-      setFormEstoque({ produto: '', quantidade: '' });
-      await carregarDados();
-      setView('estoque');
-    }
+    setFEstoque({ produto: '', quantidade: '', tipo: 'Unidade', custo: '', venda: '' });
+    await carregarDados();
+    setView('estoque');
     setLoading(false);
   };
 
-  const Card = ({ title, value, color }) => (
-    <div style={{ backgroundColor: '#111', border: '1px solid #222', padding: '20px', borderRadius: '15px' }}>
-      <p style={{ color: '#444', fontSize: '11px', fontWeight: 'bold', marginBottom: '10px' }}>{title}</p>
-      <h2 style={{ fontSize: '28px', margin: '0', color: color || '#fff' }}>{value}</h2>
-    </div>
-  );
+  const excluirItem = async (tabela, id) => {
+    if (confirm("Deseja realmente excluir?")) {
+      await supabase.from(tabela).delete().eq('id', id);
+      carregarDados();
+    }
+  };
+
+  // Cálculo de Lucro Esperado
+  const lucroUnitario = fEstoque.venda && fEstoque.custo ? (fEstoque.venda - (fEstoque.custo / (fEstoque.quantidade || 1))) : 0;
+  const lucroTotal = lucroUnitario * fEstoque.quantidade;
 
   return (
     <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#fff', padding: '20px', fontFamily: 'sans-serif' }}>
       
       <div style={{ marginBottom: '30px' }} onClick={() => setView('dashboard')}>
-        <h1 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0' }}>VendasPRO</h1>
-        <p style={{ color: '#555', fontSize: '12px' }}>{view === 'dashboard' ? 'SISTEMA ATIVO' : '← VOLTAR'}</p>
+        <h1 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0' }}>VendasPRO <span style={{color:'#7c3aed'}}>●</span></h1>
+        <p style={{ color: '#555', fontSize: '12px' }}>{view === 'dashboard' ? 'SISTEMA DE GESTÃO' : '← VOLTAR'}</p>
       </div>
 
       {view === 'dashboard' ? (
-        <>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '30px' }}>
-            <Card title="CLIENTES" value={data.clientes.length} />
-            <Card title="ESTOQUE" value={data.estoque.reduce((acc, curr) => acc + curr.quantidade, 0)} color="#10b981" />
+        <div style={{ display: 'grid', gap: '15px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            <div style={cardStyle}><p style={labelStyle}>CLIENTES</p><h2>{data.clientes.length}</h2></div>
+            <div style={cardStyle}><p style={labelStyle}>DÍVIDAS TOTAIS</p><h2 style={{color:'#ef4444'}}>R$ {data.clientes.reduce((acc, c) => acc + Number(c.saldo_devedor), 0).toFixed(2)}</h2></div>
           </div>
-
-          <div style={{ display: 'grid', gap: '12px' }}>
-            <button onClick={() => setView('novo_cliente')} style={{ backgroundColor: '#7c3aed', color: 'white', border: 'none', padding: '20px', borderRadius: '15px', fontWeight: 'bold', fontSize: '16px' }}>👤 NOVO CLIENTE</button>
-            <button onClick={() => setView('lista_clientes')} style={{ backgroundColor: '#1a1a1a', color: 'white', border: '1px solid #333', padding: '18px', borderRadius: '15px', fontWeight: 'bold' }}>👥 LISTA DE CLIENTES</button>
-            <button onClick={() => setView('estoque')} style={{ backgroundColor: '#1a1a1a', color: 'white', border: '1px solid #333', padding: '18px', borderRadius: '15px', fontWeight: 'bold' }}>📦 GESTÃO DE ESTOQUE</button>
-          </div>
-        </>
-      ) : view === 'novo_cliente' ? (
-        <div style={{ backgroundColor: '#111', padding: '25px', borderRadius: '20px', border: '1px solid #222' }}>
-          <h3 style={{ margin: '0 0 20px 0' }}>Cadastrar Cliente</h3>
-          <form onSubmit={salvarCliente}>
-            <input required placeholder="Nome" value={formCliente.nome} onChange={e => setFormCliente({...formCliente, nome: e.target.value})} style={inputStyle} />
-            <input required placeholder="WhatsApp" value={formCliente.whatsapp} onChange={e => setFormCliente({...formCliente, whatsapp: e.target.value})} style={inputStyle} />
-            <button type="submit" disabled={loading} style={btnSubmitStyle}>{loading ? 'SALVANDO...' : 'CONFIRMAR'}</button>
-          </form>
+          <button onClick={() => setView('novo_cliente')} style={btnPrimary}>👤 NOVO CLIENTE</button>
+          <button onClick={() => setView('lista_clientes')} style={btnSecondary}>👥 VER DÍVIDAS / CLIENTES</button>
+          <button onClick={() => setView('estoque')} style={btnSecondary}>📦 GESTÃO DE ESTOQUE</button>
         </div>
+      ) : view === 'novo_cliente' ? (
+        <form onSubmit={salvarCliente} style={formBox}>
+          <h3>Cadastrar Cliente</h3>
+          <input required placeholder="Nome" value={fCliente.nome} onChange={e => setFCliente({...fCliente, nome: e.target.value})} style={inputStyle} />
+          <input required placeholder="WhatsApp" value={fCliente.whatsapp} onChange={e => setFCliente({...fCliente, whatsapp: e.target.value})} style={inputStyle} />
+          <input placeholder="Saldo Devedor Inicial (R$)" type="number" value={fCliente.saldo_devedor} onChange={e => setFCliente({...fCliente, saldo_devedor: e.target.value})} style={inputStyle} />
+          <button type="submit" disabled={loading} style={btnSuccess}>{loading ? 'GRAVANDO...' : 'CONFIRMAR'}</button>
+        </form>
       ) : view === 'lista_clientes' ? (
         <div style={{ display: 'grid', gap: '10px' }}>
-          <h3 style={{ marginBottom: '10px' }}>Clientes Cadastrados</h3>
           {data.clientes.map(c => (
-            <div key={c.id} style={{ backgroundColor: '#111', padding: '15px', borderRadius: '12px', border: '1px solid #222' }}>
-              <p style={{ margin: '0', fontWeight: 'bold' }}>{c.nome}</p>
-              <p style={{ margin: '5px 0 0 0', color: '#10b981', fontSize: '14px' }}>{c.whatsapp}</p>
+            <div key={c.id} style={itemBox}>
+              <div>
+                <p style={{fontWeight:'bold', margin:0}}>{c.nome}</p>
+                <p style={{fontSize:'12px', color:'#ef4444'}}>Deve: R$ {Number(c.saldo_devedor).toFixed(2)}</p>
+              </div>
+              <button onClick={() => excluirItem('clientes', c.id)} style={btnDel}>EXCLUIR</button>
             </div>
           ))}
         </div>
       ) : view === 'estoque' ? (
         <div style={{ display: 'grid', gap: '20px' }}>
-          <div style={{ backgroundColor: '#111', padding: '20px', borderRadius: '15px' }}>
-            <h3 style={{ marginTop: '0' }}>Adicionar Produto</h3>
-            <form onSubmit={salvarEstoque}>
-              <input required placeholder="Nome do Produto" value={formEstoque.produto} onChange={e => setFormEstoque({...formEstoque, produto: e.target.value})} style={inputStyle} />
-              <input required type="number" placeholder="Quantidade" value={formEstoque.quantidade} onChange={e => setFormEstoque({...formEstoque, quantidade: e.target.value})} style={inputStyle} />
-              <button type="submit" disabled={loading} style={btnSubmitStyle}>ADICIONAR</button>
-            </form>
+          <div style={formBox}>
+            <h3 style={{marginTop:0}}>Entrada de Produto</h3>
+            <input required placeholder="Produto" value={fEstoque.produto} onChange={e => setFEstoque({...fEstoque, produto: e.target.value})} style={inputStyle} />
+            <select value={fEstoque.tipo} onChange={e => setFEstoque({...fEstoque, tipo: e.target.value})} style={inputStyle}>
+              <option>Unidade</option><option>Caixa</option><option>Pacote</option>
+            </select>
+            <input required placeholder="Quantidade" type="number" value={fEstoque.quantidade} onChange={e => setFEstoque({...fEstoque, quantidade: e.target.value})} style={inputStyle} />
+            <input required placeholder="Custo Total (R$)" type="number" value={fEstoque.custo} onChange={e => setFEstoque({...fEstoque, custo: e.target.value})} style={inputStyle} />
+            <input required placeholder="Preço de Venda Unit. (R$)" type="number" value={fEstoque.venda} onChange={e => setFEstoque({...fEstoque, venda: e.target.value})} style={inputStyle} />
+            
+            {fEstoque.venda && <div style={lucroBox}>📈 Lucro Esperado: <b>R$ {lucroTotal.toFixed(2)}</b></div>}
+            
+            <button onClick={salvarEstoque} style={btnSuccess}>ADICIONAR AO ESTOQUE</button>
           </div>
+          
           <div>
             <h3>Itens em Estoque</h3>
             {data.estoque.map(item => (
-              <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '15px', borderBottom: '1px solid #222' }}>
-                <span>{item.produto}</span>
-                <span style={{ color: '#10b981', fontWeight: 'bold' }}>{item.quantidade} un</span>
+              <div key={item.id} style={itemBox}>
+                <span>{item.produto} ({item.quantidade} {item.tipo_unidade})</span>
+                <button onClick={() => excluirItem('estoque', item.id)} style={btnDel}>X</button>
               </div>
             ))}
           </div>
@@ -126,6 +127,14 @@ export default function Home() {
   );
 }
 
-const inputStyle = { width: '100%', padding: '15px', marginBottom: '10px', borderRadius: '10px', border: '1px solid #333', backgroundColor: '#000', color: '#fff', boxSizing: 'border-box' };
-const btnSubmitStyle = { width: '100%', backgroundColor: '#10b981', color: 'white', border: 'none', padding: '18px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' };
-      
+const cardStyle = { backgroundColor: '#111', border: '1px solid #222', padding: '15px', borderRadius: '15px' };
+const labelStyle = { color: '#444', fontSize: '10px', fontWeight: 'bold', margin: '0 0 5px 0' };
+const inputStyle = { width: '100%', padding: '12px', marginBottom: '10px', borderRadius: '8px', border: '1px solid #222', backgroundColor: '#000', color: '#fff' };
+const btnPrimary = { backgroundColor: '#7c3aed', color: '#fff', border: 'none', padding: '15px', borderRadius: '12px', fontWeight: 'bold' };
+const btnSecondary = { backgroundColor: '#1a1a1a', color: '#fff', border: '1px solid #333', padding: '15px', borderRadius: '12px', fontWeight: 'bold' };
+const btnSuccess = { backgroundColor: '#10b981', color: '#fff', border: 'none', padding: '15px', borderRadius: '12px', fontWeight: 'bold', width: '100%' };
+const btnDel = { backgroundColor: '#311', color: '#f87171', border: 'none', padding: '5px 10px', borderRadius: '5px', fontSize: '10px' };
+const formBox = { backgroundColor: '#111', padding: '20px', borderRadius: '15px', border: '1px solid #222' };
+const itemBox = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#111', padding: '12px', borderRadius: '10px', border: '1px solid #222' };
+const lucroBox = { backgroundColor: '#064e3b', color: '#34d399', padding: '10px', borderRadius: '8px', marginBottom: '15px', fontSize: '13px', textAlign: 'center' };
+                 
