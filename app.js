@@ -1,13 +1,14 @@
+import './globals.css'; // Importação dos estilos globais do Tailwind
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ActivityIndicator, View } from 'react-native';
 import Toast from 'react-native-toast-message';
 
-// Configuração do Supabase
+// Configuração do Banco de Dados (Supabase)
 import { supabase } from './src/config/supabaseConfig';
 
-// Importação das Telas
+// Importação de todas as Telas do Sistema
 import LoginScreen from './src/screens/auth/LoginScreen';
 import RegisterScreen from './src/screens/auth/RegisterScreen';
 import DashboardScreen from './src/screens/dashboard/DashboardScreen';
@@ -24,10 +25,10 @@ export default function App() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // Verifica a sessão atual ao iniciar o app
+    // 1. Verifica se já existe uma sessão ativa ao abrir o app
     checkUser();
 
-    // Monitoriza mudanças no estado de autenticação (Login/Logout)
+    // 2. Escuta mudanças de autenticação em tempo real (Login/Logout)
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
       setIsLoading(false);
@@ -45,12 +46,13 @@ export default function App() {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
     } catch (error) {
-      console.log("Erro ao recuperar sessão:", error);
+      console.log("Erro de sessão:", error);
     } finally {
       setIsLoading(false);
     }
   }
 
+  // Tela de carregamento enquanto o App verifica a segurança
   if (isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0f0f1a' }}>
@@ -64,11 +66,11 @@ export default function App() {
       <Stack.Navigator 
         screenOptions={{ 
           headerShown: false,
-          contentStyle: { backgroundColor: '#0f0f1a' } 
+          contentStyle: { backgroundColor: '#0f0f1a' } // Cor de fundo padrão
         }}
       >
         {user ? (
-          // --- ROTAS DO SISTEMA (UTILIZADOR LOGADO) ---
+          // --- ÁREA RESTRITA (SÓ ACESSA QUEM ESTÁ LOGADO) ---
           <>
             <Stack.Screen name="Dashboard" component={DashboardScreen} />
             <Stack.Screen name="NewSale" component={NewSaleScreen} />
@@ -78,13 +80,15 @@ export default function App() {
             <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
           </>
         ) : (
-          // --- ROTAS DE ACESSO (NÃO LOGADO) ---
+          // --- ÁREA PÚBLICA (LOGIN E CADASTRO) ---
           <>
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
           </>
         )}
       </Stack.Navigator>
+      
+      {/* Sistema de notificações global */}
       <Toast />
     </NavigationContainer>
   );
