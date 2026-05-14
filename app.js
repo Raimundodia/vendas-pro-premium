@@ -18,7 +18,7 @@ import ProductDetailScreen from './src/screens/products/ProductDetailScreen';
 
 const Stack = createNativeStackNavigator();
 
-export default function App() {
+function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState(null);
 
@@ -77,3 +77,5 @@ export default function App() {
     </NavigationContainer>
   );
 }
+
+export default App;
