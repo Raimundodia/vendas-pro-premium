@@ -1,17 +1,13 @@
 import { supabase } from '../config/supabaseConfig';
 
-// Serviço de API para operações CRUD com Supabase atualizado para Português
 export const apiService = {
-  
   // ==================== PRODUTOS ====================
-  
-  // Listar todos os produtos
   async getProducts() {
     try {
       const { data, error } = await supabase
-        .from('produtos')
+        .from('products')
         .select('*')
-        .order('nome', { ascending: true });
+        .order('name', { ascending: true });
       if (error) throw error;
       return { success: true, data };
     } catch (error) {
@@ -19,32 +15,12 @@ export const apiService = {
     }
   },
 
-  // Obter um produto específico
-  async getProduct(id) {
-    try {
-      const { data, error } = await supabase
-        .from('produtos')
-        .select('*')
-        .eq('id', id)
-        .single();
-      if (error) throw error;
-      return { success: true, data };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  },
-
-  // Criar novo produto
   async createProduct(product) {
     try {
+      // Ajuste: Garantindo o uso de sale_price e stock_quantity
       const { data, error } = await supabase
-        .from('produtos')
-        .insert([{
-          nome: product.nome,
-          preco: product.preco,
-          descricao: product.descricao,
-          user_id: product.user_id
-        }])
+        .from('products')
+        .insert([product])
         .select();
       if (error) throw error;
       return { success: true, data: data[0] };
@@ -53,20 +29,13 @@ export const apiService = {
     }
   },
 
-  // ==================== VENDAS ====================
-
-  // Listar vendas
-  async getSales(filters = {}) {
+  // ==================== CLIENTES ====================
+  async getCustomers() {
     try {
-      let query = supabase
-        .from('vendas')
-        .select('*, customers(nome)')
-        .order('criado_em', { ascending: false });
-
-      if (filters.userId) query = query.eq('user_id', filters.userId);
-      if (filters.customerId) query = query.eq('cliente_id', filters.customerId);
-
-      const { data, error } = await query;
+      const { data, error } = await supabase
+        .from('customers')
+        .select('*')
+        .order('name', { ascending: true });
       if (error) throw error;
       return { success: true, data };
     } catch (error) {
@@ -74,78 +43,69 @@ export const apiService = {
     }
   },
 
-  // Criar nova venda com itens
-  async createSale(saleData, cartItems) {
+  // ==================== VENDAS ====================
+  async createSale(saleData, items) {
     try {
-      // 1. Inserir na tabela principal de vendas
+      // 1. Insere a venda principal
       const { data: sale, error: saleError } = await supabase
-        .from('vendas')
-        .insert([{
-          cliente_id: saleData.cliente_id,
-          valor_total: saleData.valor_total,
-          metodo_pagamento: saleData.metodo_pagamento,
-          status: 'pago',
-          user_id: saleData.user_id
-        }])
-        .select();
-
+        .from('sales')
+        .insert([saleData])
+        .select()
+        .single();
+      
       if (saleError) throw saleError;
 
-      // 2. Inserir itens da venda (isso ativa o trigger de estoque automaticamente)
-      const itemsToInsert = cartItems.map(item => ({
-        venda_id: sale[0].id,
-        produto_id: item.id,
-        quantidade: item.quantidade,
-        preco_unitario: item.preco
+      // 2. Insere os itens da venda
+      const saleItems = items.map(item => ({
+        sale_id: sale.id,
+        product_id: item.id,
+        quantity: item.qty,
+        unit_price: item.sale_price,
+        total_price: item.qty * item.sale_price
       }));
 
       const { error: itemsError } = await supabase
-        .from('itens_venda')
-        .insert(itemsToInsert);
+        .from('sale_items')
+        .insert(saleItems);
 
       if (itemsError) throw itemsError;
 
-      return { success: true, data: sale[0] };
+      return { success: true, data: sale };
     } catch (error) {
       return { success: false, error: error.message };
     }
   },
 
-  // ==================== ESTATÍSTICAS ====================
-
+  // ==================== DASHBOARD ====================
   async getDashboardStats(userId) {
     try {
       const today = new Date().toISOString().split('T')[0];
       
-      // Vendas do dia
-      const { data: todaySales, error: error1 } = await supabase
-        .from('vendas')
-        .select('valor_total')
+      // Soma vendas de hoje
+      const { data: todaySales } = await supabase
+        .from('sales')
+        .select('total_amount')
         .eq('user_id', userId)
-        .gte('criado_em', today);
+        .gte('created_at', today);
       
-      // Clientes
-      const { data: customers, error: error2 } = await supabase
+      // Conta clientes com dívida (Ajustado para debt_balance)
+      const { data: debtCust } = await supabase
         .from('customers')
         .select('id')
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .gt('debt_balance', 0);
       
-      // Produtos
-      const { data: products, error: error3 } = await supabase
-        .from('produtos')
-        .select('id')
+      const { count: prodCount } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
         .eq('user_id', userId);
-
-      if (error1 || error2 || error3) throw (error1 || error2 || error3);
-
-      const totalSales = todaySales.reduce((sum, sale) => sum + (sale.valor_total || 0), 0);
 
       return {
         success: true,
         data: {
-          totalSales,
-          totalCustomers: customers.length,
-          totalProducts: products.length
+          totalSales: todaySales?.reduce((sum, s) => sum + (s.total_amount || 0), 0) || 0,
+          debtCustomers: debtCust?.length || 0,
+          totalProducts: prodCount || 0
         }
       };
     } catch (error) {
