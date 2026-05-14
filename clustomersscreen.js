@@ -25,7 +25,7 @@ export default function CustomersScreen({ navigation }) {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
-      // Busca clientes usando debt_balance
+      // Procura clientes usando debt_balance
       const { data, error } = await supabase
         .from('customers')
         .select('*')
@@ -66,7 +66,7 @@ export default function CustomersScreen({ navigation }) {
         <Text style={styles.title}>Meus Clientes</Text>
         <TextInput
           style={styles.searchBar}
-          placeholder="Buscar cliente..."
+          placeholder="Procurar cliente..."
           placeholderTextColor="#94a3b8"
           value={searchQuery}
           onChangeText={setSearchQuery}
