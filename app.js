@@ -1,62 +1,68 @@
-import React, { useEffect, useReducer } from 'react';
-import { NavigationContainer, DarkTheme } from '@react-navigation/native';
+import React, { useEffect, useState, useReducer } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { ActivityIndicator, View, StatusBar } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 import Toast from 'react-native-toast-message';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// Configuração do Supabase
 import { supabase } from './src/config/supabaseConfig';
 
-// Importação das Telas (Verifique se os caminhos estão corretos)
+// Importação das Telas (Ajustadas conforme os arquivos que revisamos)
 import LoginScreen from './src/screens/auth/LoginScreen';
-import RegisterScreen from './src/screens/auth/RegisterScreen';
 import DashboardScreen from './src/screens/dashboard/DashboardScreen';
-import SalesScreen from './src/screens/sales/SalesScreen';
 import NewSaleScreen from './src/screens/sales/NewSaleScreen';
-import CustomersScreen from './src/screens/customers/CustomersScreen';
+// Nota: Certifique-se que estas telas abaixo existem ou use as que implementamos
+// import ProductsScreen from './src/screens/products/ProductsScreen';
+// import CustomersScreen from './src/screens/customers/CustomersScreen';
 
 const Stack = createNativeStackNavigator();
-const Tab = createBottomTabNavigator();
 
 export default function App() {
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [userToken, setUserToken] = React.useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // Verificar sessão ativa ao abrir o app
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUserToken(session?.access_token ?? null);
+    // 1. Verifica sessão inicial
+    checkUser();
+
+    // 2. Escuta mudanças na autenticação (Login/Logout)
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
       setIsLoading(false);
     });
 
-    // Ouvir mudanças na autenticação (Login/Logout)
-    supabase.auth.onAuthStateChange((_event, session) => {
-      setUserToken(session?.access_token ?? null);
-    });
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
+
+  async function checkUser() {
+    const { data: { session } } = await supabase.auth.getSession();
+    setUser(session?.user ?? null);
+    setIsLoading(false);
+  }
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', backgroundColor: '#0f0f1a' }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0f0f1a' }}>
         <ActivityIndicator size="large" color="#7c3aed" />
       </View>
     );
   }
 
   return (
-    <NavigationContainer theme={DarkTheme}>
-      <StatusBar barStyle="light-content" />
+    <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {userToken == null ? (
-          // Fluxo de Autenticação
-          <Stack.Group>
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="Register" component={RegisterScreen} />
-          </Stack.Group>
+        {user ? (
+          // Rotas para Utilizador Logado
+          <>
+            <Stack.Screen name="Dashboard" component={DashboardScreen} />
+            <Stack.Screen name="NewSale" component={NewSaleScreen} />
+            {/* Adicione aqui outras telas conforme as for criando */}
+          </>
         ) : (
-          // Fluxo Principal da App
-          <Stack.Screen name="Main" component={DashboardScreen} /> 
+          // Rotas para Utilizador Não Logado
+          <Stack.Screen name="Login" component={LoginScreen} />
         )}
       </Stack.Navigator>
       <Toast />
