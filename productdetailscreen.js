@@ -76,7 +76,7 @@ export default function ProductDetailScreen({ route, navigation }) {
             </View>
 
             <View style={[styles.card, { flex: 1, marginLeft: 10 }]}>
-              <Text style={styles.label}>ESTOQUE ATUAL</Text>
+              <Text style={styles.label}>STOCK ATUAL</Text>
               <Text style={[
                 styles.value, 
                 product.stock_quantity <= 5 ? { color: '#f59e0b' } : { color: '#fff' }
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
   backBtn: { color: '#7c3aed', marginRight: 20, fontWeight: 'bold' },
   title: { fontSize: 20, fontWeight: 'bold', color: '#fff' },
   content: { padding: 20 },
-  card: { backgroundColor: '#1e1e3a', padding: 20, borderRadius: 15, marginBottom: 15, borderSize: 1, borderColor: '#2d2d5e' },
+  card: { backgroundColor: '#1e1e3a', padding: 20, borderRadius: 15, marginBottom: 15, borderWidth: 1, borderColor: '#2d2d5e' },
   row: { flexDirection: 'row' },
   label: { color: '#94a3b8', fontSize: 10, fontWeight: 'bold', marginBottom: 5 },
   value: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
