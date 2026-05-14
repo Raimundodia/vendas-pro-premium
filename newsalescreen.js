@@ -1,183 +1,157 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  ActivityIndicator,
-  FlatList,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  TextInput, ActivityIndicator, FlatList, Alert
 } from 'react-native';
-import Toast from 'react-native-toast-message';
-import { apiService } from '../../services/apiService';
-import { supabase } from '../../config/supabaseConfig';
+import { supabase } from '../../config/supabaseConfig'; // Ajustado conforme sua estrutura
 
 export default function NewSaleScreen({ navigation }) {
   const [step, setStep] = useState(1);
+  const [saleType, setSaleType] = useState(null); // 'avista' ou 'fiado'
   const [cart, setCart] = useState([]);
   const [products, setProducts] = useState([]);
   const [customers, setCustomers] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    getCurrentUser();
-    loadProducts();
-    loadCustomers();
+    loadInitialData();
   }, []);
 
-  const getCurrentUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    setUser(user);
-  };
-
-  const loadProducts = async () => {
-    const result = await apiService.getProducts();
-    if (result.success) {
-      setProducts(result.data);
-    }
-  };
-
-  const loadCustomers = async () => {
-    // Se a função no apiService ainda for getCustomers, mantemos
-    const result = await apiService.getCustomers();
-    if (result.success) {
-      setCustomers(result.data);
-    }
+  const loadInitialData = async () => {
+    setLoading(true);
+    const { data: prod } = await supabase.from('products').select('*').gt('stock_quantity', 0);
+    const { data: cust } = await supabase.from('customers').select('*');
+    setProducts(prod || []);
+    setCustomers(cust || []);
+    setLoading(false);
   };
 
   const addToCart = (product) => {
-    const existingItem = cart.find(item => item.id === product.id);
-    if (existingItem) {
-      setCart(cart.map(item => 
-        item.id === product.id ? { ...item, quantidade: item.quantidade + 1 } : item
-      ));
+    const existing = cart.find(item => item.id === product.id);
+    if (existing) {
+      setCart(cart.map(item => item.id === product.id ? { ...item, qty: item.qty + 1 } : item));
     } else {
-      setCart([...cart, { ...product, quantidade: 1 }]);
+      setCart([...cart, { ...product, qty: 1 }]);
     }
-    Toast.show({ type: 'success', text1: 'Adicionado', text2: `${product.nome} no carrinho` });
   };
 
-  const calculateTotal = () => {
-    return cart.reduce((sum, item) => sum + (item.preco * item.quantidade), 0);
-  };
+  const calculateTotal = () => cart.reduce((acc, item) => acc + (item.sale_price * item.qty), 0);
 
-  const handleFinishSale = async () => {
-    if (!paymentMethod) {
-      Toast.show({ type: 'error', text1: 'Erro', text2: 'Selecione um método de pagamento' });
-      return;
-    }
+  const finalizarVenda = async () => {
+    if (cart.length === 0) return Alert.alert("Erro", "Carrinho vazio");
+    if (saleType === 'fiado' && !selectedCustomer) return Alert.alert("Erro", "Selecione um cliente");
 
     setLoading(true);
-    const saleData = {
-      cliente_id: selectedCustomer?.id || null,
-      valor_total: calculateTotal(),
-      metodo_pagamento: paymentMethod,
-      user_id: user.id
-    };
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const total = calculateTotal();
 
-    const result = await apiService.createSale(saleData, cart);
-    setLoading(false);
+      // 1. Registar a Venda
+      const { data: sale, error: saleError } = await supabase
+        .from('sales')
+        .insert([{
+          user_id: user.id,
+          customer_id: selectedCustomer?.id || null,
+          total_amount: total,
+          final_amount: total,
+          payment_method: saleType === 'fiado' ? 'fiado' : paymentMethod,
+          status: 'completed'
+        }])
+        .select()
+        .single();
 
-    if (result.success) {
-      Toast.show({ type: 'success', text1: 'Sucesso', text2: 'Venda realizada com sucesso!' });
-      navigation.navigate('Sales');
-    } else {
-      Toast.show({ type: 'error', text1: 'Erro', text2: result.error });
+      if (saleError) throw saleError;
+
+      // 2. Registar Itens e Baixar Estoque
+      for (const item of cart) {
+        await supabase.from('sale_items').insert([{
+          sale_id: sale.id,
+          product_id: item.id,
+          quantity: item.qty,
+          unit_price: item.sale_price,
+          total_price: item.sale_price * item.qty
+        }]);
+
+        // Atualiza estoque
+        await supabase.rpc('decrement_stock', { 
+          row_id: item.id, 
+          amount: item.qty 
+        });
+      }
+
+      // 3. Se for Fiado, atualizar dívida do cliente
+      if (saleType === 'fiado') {
+        await supabase.from('customers')
+          .update({ debt_balance: Number(selectedCustomer.debt_balance || 0) + total })
+          .eq('id', selectedCustomer.id);
+      }
+
+      Alert.alert("Sucesso", "Venda realizada!");
+      navigation.goBack();
+    } catch (error) {
+      Alert.alert("Erro", error.message);
     }
+    setLoading(false);
   };
 
-  // Renderização do Item do Carrinho (Ajustado para Português)
-  const renderCartItem = ({ item }) => (
-    <View style={styles.cartItem}>
-      <View style={styles.cartItemInfo}>
-        <Text style={styles.cartItemName}>{item.nome}</Text>
-        <Text style={styles.cartItemPrice}>R$ {item.preco.toFixed(2)} x {item.quantidade}</Text>
-      </View>
-      <Text style={styles.qtyText}>R$ {(item.preco * item.quantidade).toFixed(2)}</Text>
-    </View>
-  );
-
+  // Renderização simplificada para exemplo (mantenha seu estilo visual de UI)
   return (
     <View style={styles.container}>
-      {/* Lógica de navegação entre Step 1 (Produtos) e Step 2 (Pagamento) */}
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.title}>Nova Venda</Text>
-        
-        {step === 1 ? (
-          <View>
-            <Text style={styles.label}>Selecionar Produtos</Text>
-            {products.map(product => (
-              <TouchableOpacity 
-                key={product.id} 
-                style={styles.productCard} 
-                onPress={() => addToCart(product)}
-              >
-                <Text style={styles.productName}>{product.nome}</Text>
-                <Text style={styles.productPrice}>R$ {product.preco.toFixed(2)}</Text>
-              </TouchableOpacity>
-            ))}
-            <TouchableOpacity style={styles.nextBtn} onPress={() => setStep(2)}>
-              <Text style={styles.nextBtnText}>Continuar (R$ {calculateTotal().toFixed(2)})</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View>
-            <Text style={styles.label}>Método de Pagamento</Text>
-            <View style={styles.paymentContainer}>
-              {['Pix', 'Dinheiro', 'Cartão'].map(method => (
-                <TouchableOpacity 
-                  key={method}
-                  style={[styles.paymentBtn, paymentMethod === method && styles.paymentBtnActive]}
-                  onPress={() => setPaymentMethod(method)}
-                >
-                  <Text style={styles.paymentBtnText}>{method}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            
-            <FlatList
-              data={cart}
-              renderItem={renderCartItem}
-              keyExtractor={item => item.id.toString()}
-              style={{ marginVertical: 20 }}
-            />
+      {loading && <ActivityIndicator size="large" color="#7c3aed" />}
+      
+      {step === 1 && (
+        <View style={styles.stepContainer}>
+          <Text style={styles.title}>Tipo de Venda</Text>
+          <TouchableOpacity style={styles.btn} onPress={() => {setSaleType('avista'); setStep(2);}}>
+            <Text style={styles.btnText}>À VISTA</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.btn} onPress={() => {setSaleType('fiado'); setStep(2);}}>
+            <Text style={styles.btnText}>FIADO (ANOTAR)</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
-            <TouchableOpacity 
-              style={styles.finishBtn} 
-              onPress={handleFinishSale}
-              disabled={loading}
-            >
-              {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.finishBtnText}>Finalizar Venda</Text>}
+      {step === 2 && (
+        <FlatList
+          data={products}
+          keyExtractor={item => item.id}
+          renderItem={({ item }) => (
+            <TouchableOpacity style={styles.item} onPress={() => addToCart(item)}>
+              <Text style={styles.itemText}>{item.name} - R$ {item.sale_price}</Text>
+              <Text style={styles.stockText}>Estoque: {item.stock_quantity}</Text>
             </TouchableOpacity>
-          </View>
-        )}
-      </ScrollView>
+          )}
+          ListFooterComponent={
+            <TouchableOpacity style={styles.btnNext} onPress={() => setStep(3)}>
+              <Text style={styles.btnText}>Ver Carrinho ({cart.length})</Text>
+            </TouchableOpacity>
+          }
+        />
+      )}
+
+      {step === 3 && (
+        <View style={styles.stepContainer}>
+          <Text style={styles.title}>Total: R$ {calculateTotal().toFixed(2)}</Text>
+          <TouchableOpacity style={styles.btnSuccess} onPress={finalizarVenda}>
+            <Text style={styles.btnText}>CONCLUIR VENDA</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f0f1a' },
-  scrollContent: { padding: 20 },
-  title: { fontSize: 24, fontWeight: '800', color: '#fff', marginBottom: 20 },
-  label: { color: '#94a3b8', marginBottom: 10, textTransform: 'uppercase', fontSize: 12 },
-  productCard: { backgroundColor: '#1e1e3a', padding: 15, borderRadius: 10, marginBottom: 10, borderWidth: 1, borderColor: '#2d2d5e' },
-  productName: { color: '#fff', fontWeight: '700' },
-  productPrice: { color: '#10b981', marginTop: 5 },
-  nextBtn: { backgroundColor: '#7c3aed', padding: 15, borderRadius: 10, alignItems: 'center', marginTop: 20 },
-  nextBtnText: { color: '#fff', fontWeight: '700' },
-  paymentContainer: { flexDirection: 'row', gap: 10, marginBottom: 20 },
-  paymentBtn: { flex: 1, padding: 12, backgroundColor: '#1e1e3a', borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: '#2d2d5e' },
-  paymentBtnActive: { borderColor: '#7c3aed', backgroundColor: '#252545' },
-  paymentBtnText: { color: '#fff', fontSize: 12 },
-  finishBtn: { backgroundColor: '#10b981', padding: 18, borderRadius: 12, alignItems: 'center' },
-  finishBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
-  cartItem: { flexDirection: 'row', justifyContent: 'space-between', padding: 12, backgroundColor: '#1a1a2e', marginBottom: 5, borderRadius: 8 },
-  cartItemName: { color: '#fff', fontWeight: '600' },
-  cartItemPrice: { color: '#94a3b8', fontSize: 11 }
+  container: { flex: 1, backgroundColor: '#000', padding: 20 },
+  stepContainer: { flex: 1, justifyContent: 'center' },
+  title: { color: '#fff', fontSize: 22, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
+  btn: { backgroundColor: '#1e1e3a', padding: 20, borderRadius: 12, marginBottom: 10, borderWidth: 1, borderColor: '#7c3aed' },
+  btnSuccess: { backgroundColor: '#10b981', padding: 20, borderRadius: 12, marginTop: 20 },
+  btnText: { color: '#fff', textAlign: 'center', fontWeight: 'bold' },
+  item: { backgroundColor: '#111', padding: 15, borderRadius: 8, marginBottom: 10, borderLeftWidth: 4, borderLeftColor: '#7c3aed' },
+  itemText: { color: '#fff', fontWeight: 'bold' },
+  stockText: { color: '#666', fontSize: 12 },
+  btnNext: { backgroundColor: '#7c3aed', padding: 15, borderRadius: 10, marginTop: 10 }
 });
