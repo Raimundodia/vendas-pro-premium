@@ -2,7 +2,7 @@ import './globals.css';
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { ActivityIndicator, View, Text } from 'react-native'; // Text adicionado aqui
+import { ActivityIndicator, View, Text } from 'react-native'; 
 import Toast from 'react-native-toast-message';
 
 import { supabase } from './src/config/supabaseConfig';
@@ -40,7 +40,7 @@ export default function App() {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
     } catch (error) {
-      console.log("Erro:", error);
+      console.log("Erro de sessão:", error);
     } finally {
       setIsLoading(false);
     }
