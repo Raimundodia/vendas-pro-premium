@@ -1,114 +1,134 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, Alert
+  View, Text, StyleSheet, FlatList, TouchableOpacity,
+  RefreshControl, ActivityIndicator, TextInput
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
-import { apiService } from '../../services/apiService';
 import { supabase } from '../../config/supabaseConfig';
 
-export default function ProductDetailScreen({ route, navigation }) {
-  const { productId } = route.params;
-  const [product, setProduct] = useState(null);
+export default function ProductsScreen({ navigation }) {
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    loadProductData();
-  }, []);
+  // Sincroniza os dados sempre que você volta para esta tela
+  useFocusEffect(
+    React.useCallback(() => {
+      loadProducts();
+    }, [])
+  );
 
-  const loadProductData = async () => {
+  const loadProducts = async () => {
     setLoading(true);
     try {
-      // Busca usando os novos nomes de coluna
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Busca usando os novos nomes: sale_price e stock_quantity
       const { data, error } = await supabase
         .from('products')
         .select('*')
-        .eq('id', productId)
-        .single();
+        .eq('user_id', user.id)
+        .order('name', { ascending: true });
 
       if (error) throw error;
-      setProduct(data);
+      setProducts(data || []);
     } catch (error) {
       Toast.show({
         type: 'error',
-        text1: 'Erro',
-        text2: 'Falha ao carregar o produto',
+        text1: 'Erro de Conexão',
+        text2: 'Não foi possível carregar os produtos',
       });
     } finally {
       setLoading(false);
     }
   };
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadProducts();
+    setRefreshing(false);
+  };
+
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0);
   };
 
-  if (loading) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color="#7c3aed" />
-      </View>
-    );
-  }
+  // Filtro de pesquisa inteligente
+  const filteredProducts = products.filter(p => 
+    p.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backBtn}>← Voltar</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Detalhes do Produto</Text>
+        <Text style={styles.title}>Stock de Produtos</Text>
+        <View style={styles.searchContainer}>
+          <TextInput
+            style={styles.searchBar}
+            placeholder="Procurar por nome..."
+            placeholderTextColor="#94a3b8"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
       </View>
 
-      {product && (
-        <View style={styles.content}>
-          <View style={styles.card}>
-            <Text style={styles.label}>NOME DO PRODUTO</Text>
-            <Text style={styles.value}>{product.name}</Text>
-          </View>
-
-          <View style={styles.row}>
-            <View style={[styles.card, { flex: 1 }]}>
-              <Text style={styles.label}>PREÇO DE VENDA</Text>
-              <Text style={[styles.value, { color: '#10b981' }]}>
-                {formatCurrency(product.sale_price)}
-              </Text>
-            </View>
-
-            <View style={[styles.card, { flex: 1, marginLeft: 10 }]}>
-              <Text style={styles.label}>STOCK ATUAL</Text>
-              <Text style={[
-                styles.value, 
-                product.stock_quantity <= 5 ? { color: '#f59e0b' } : { color: '#fff' }
-              ]}>
-                {product.stock_quantity} un
-              </Text>
-            </View>
-          </View>
-
+      <FlatList
+        data={filteredProducts}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#7c3aed" />}
+        renderItem={({ item }) => (
           <TouchableOpacity 
-            style={styles.editButton}
-            onPress={() => alert("Função de editar em desenvolvimento")}
+            style={styles.card}
+            onPress={() => navigation.navigate('ProductDetail', { productId: item.id })}
           >
-            <Text style={styles.buttonText}>EDITAR PRODUTO</Text>
+            <View style={styles.productInfo}>
+              <Text style={styles.productName}>{item.name}</Text>
+              <Text style={styles.productPrice}>{formatCurrency(item.sale_price)}</Text>
+            </View>
+            
+            <View style={styles.stockBadge}>
+              <Text style={styles.stockLabel}>STOCK</Text>
+              <Text style={[
+                styles.stockValue, 
+                item.stock_quantity <= 5 ? { color: '#ef4444' } : { color: '#10b981' }
+              ]}>
+                {item.stock_quantity}
+              </Text>
+            </View>
           </TouchableOpacity>
-        </View>
-      )}
-    </ScrollView>
+        )}
+        ListEmptyComponent={
+          !loading && <Text style={styles.emptyText}>Nenhum produto cadastrado.</Text>
+        }
+      />
+
+      <TouchableOpacity 
+        style={styles.fab}
+        onPress={() => navigation.navigate('AddProduct')}
+      >
+        <Text style={styles.fabIcon}>+</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f0f1a' },
-  center: { justifyContent: 'center', alignItems: 'center' },
-  header: { padding: 20, paddingTop: 40, flexDirection: 'row', alignItems: 'center' },
-  backBtn: { color: '#7c3aed', marginRight: 20, fontWeight: 'bold' },
-  title: { fontSize: 20, fontWeight: 'bold', color: '#fff' },
-  content: { padding: 20 },
-  card: { backgroundColor: '#1e1e3a', padding: 20, borderRadius: 15, marginBottom: 15, borderWidth: 1, borderColor: '#2d2d5e' },
-  row: { flexDirection: 'row' },
-  label: { color: '#94a3b8', fontSize: 10, fontWeight: 'bold', marginBottom: 5 },
-  value: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-  editButton: { backgroundColor: '#334155', padding: 18, borderRadius: 12, alignItems: 'center', marginTop: 20 },
-  buttonText: { color: '#fff', fontWeight: 'bold' }
+  header: { padding: 20, paddingTop: 40, backgroundColor: '#161625' },
+  title: { fontSize: 24, fontWeight: 'bold', color: '#fff', marginBottom: 15 },
+  searchContainer: { flexDirection: 'row', alignItems: 'center' },
+  searchBar: { flex: 1, backgroundColor: '#1e1e3a', color: '#fff', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#2d2d5e' },
+  card: { backgroundColor: '#1e1e3a', marginHorizontal: 20, marginTop: 12, padding: 16, borderRadius: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderWidth: 1, borderColor: '#2d2d5e' },
+  productName: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  productPrice: { color: '#94a3b8', fontSize: 14, marginTop: 4 },
+  stockBadge: { alignItems: 'center', backgroundColor: '#161625', padding: 8, borderRadius: 8, minWidth: 60 },
+  stockLabel: { color: '#94a3b8', fontSize: 8, fontWeight: 'bold' },
+  stockValue: { fontSize: 16, fontWeight: 'bold' },
+  fab: { position: 'absolute', right: 20, bottom: 20, width: 60, height: 60, borderRadius: 30, backgroundColor: '#7c3aed', justifyContent: 'center', alignItems: 'center', elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 3.84 },
+  fabIcon: { color: '#fff', fontSize: 30, fontWeight: 'bold' },
+  emptyText: { color: '#94a3b8', textAlign: 'center', marginTop: 40 }
 });
