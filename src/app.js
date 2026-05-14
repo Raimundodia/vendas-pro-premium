@@ -5,7 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ActivityIndicator, View } from 'react-native'; 
 import Toast from 'react-native-toast-message';
 
-// Agora busca na mesma pasta (removido um ponto)
+// Importações corrigidas para a mesma pasta
 import { supabase } from './supabaseconfig'; 
 
 import LoginScreen from './loginscreen';
@@ -14,7 +14,7 @@ import DashboardScreen from './dashboardscreen';
 import NewSaleScreen from './newsalescreen';
 import SalesHistoryScreen from './saleshistoryscreen';
 import CustomersScreen from './clustomersscreen';
-import ProductsScreen from './productdetailscreen'; 
+import ProductDetailScreen from './productdetailscreen'; 
 
 const Stack = createNativeStackNavigator();
 
@@ -32,7 +32,11 @@ export default function App() {
       setUser(session?.user ?? null);
     });
 
-    return () => authListener.subscription.unsubscribe();
+    return () => {
+      if (authListener && authListener.subscription) {
+        authListener.subscription.unsubscribe();
+      }
+    };
   }, []);
 
   if (isLoading) {
@@ -52,7 +56,7 @@ export default function App() {
             <Stack.Screen name="NewSale" component={NewSaleScreen} />
             <Stack.Screen name="SalesHistory" component={SalesHistoryScreen} />
             <Stack.Screen name="Customers" component={CustomersScreen} />
-            <Stack.Screen name="Products" component={ProductsScreen} />
+            <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
           </>
         ) : (
           <>
@@ -65,4 +69,3 @@ export default function App() {
     </NavigationContainer>
   );
 }
-
