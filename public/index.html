@@ -1,11 +1,30 @@
 <!DOCTYPE html>
-<html lang="pt">
-<head>
+<html lang="pt-br">
+  <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Vendas PRO</title>
-</head>
-<body>
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="theme-color" content="#0f0f1a" />
+    <meta name="description" content="Vendas Pro Premium - Gestão de Vendas" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <title>Vendas Pro Premium</title>
+    
+    <style>
+      /* ESTILO CRÍTICO PARA EVITAR TELA BRANCA NO REACT NATIVE WEB */
+      html, body, #root {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        background-color: #0f0f1a; /* Garante que o fundo escuro apareça imediatamente */
+        display: flex;
+        flex-direction: column;
+      }
+    </style>
+  </head>
+  <body>
+    <noscript>Você precisa ativar o JavaScript para rodar este aplicativo.</noscript>
     <div id="root"></div>
-</body>
+  </body>
 </html>
