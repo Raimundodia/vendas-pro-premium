@@ -5,10 +5,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ActivityIndicator, View } from 'react-native'; 
 import Toast from 'react-native-toast-message';
 
-// Busca o config na mesma pasta src
 import { supabase } from './supabaseconfig'; 
 
-// Importações das Telas
 import LoginScreen from './loginscreen';
 import RegisterScreen from './registerscreen';
 import DashboardScreen from './dashboardscreen';
@@ -28,16 +26,10 @@ export default function App() {
       setUser(session?.user ?? null);
       setIsLoading(false);
     });
-
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
     });
-
-    return () => {
-      if (authListener && authListener.subscription) {
-        authListener.subscription.unsubscribe();
-      }
-    };
+    return () => authListener.subscription.unsubscribe();
   }, []);
 
   if (isLoading) {
@@ -50,7 +42,7 @@ export default function App() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#0f0f1a' } }}>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
         {user ? (
           <>
             <Stack.Screen name="Dashboard" component={DashboardScreen} />
