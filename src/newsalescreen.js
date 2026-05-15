@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
-// AQUI ESTÁ A CORREÇÃO: Importando da mesma pasta 'src'
 import { supabase } from './supabaseconfig'; 
-import Toast from 'react-native-toast-message';
 
 export default function NewSaleScreen({ navigation }) {
   const [product, setProduct] = useState('');
@@ -11,7 +9,7 @@ export default function NewSaleScreen({ navigation }) {
 
   const handleSaveSale = async () => {
     if (!product || !value) {
-      Toast.show({ type: 'error', text1: 'Erro', text2: 'Preencha todos os campos' });
+      alert('Preencha todos os campos');
       return;
     }
 
@@ -26,10 +24,10 @@ export default function NewSaleScreen({ navigation }) {
 
       if (error) throw error;
 
-      Toast.show({ type: 'success', text1: 'Sucesso', text2: 'Venda registrada!' });
+      alert('Venda registrada com sucesso!');
       navigation.goBack();
     } catch (error) {
-      Toast.show({ type: 'error', text1: 'Erro', text2: error.message });
+      alert(error.message);
     } finally {
       setLoading(false);
     }
@@ -56,11 +54,7 @@ export default function NewSaleScreen({ navigation }) {
         onChangeText={setValue} 
       />
 
-      <TouchableOpacity 
-        style={styles.button} 
-        onPress={handleSaveSale} 
-        disabled={loading}
-      >
+      <TouchableOpacity style={styles.button} onPress={handleSaveSale} disabled={loading}>
         {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Confirmar Venda</Text>}
       </TouchableOpacity>
 
