@@ -1,52 +1,34 @@
-// ... importações mantidas ...
-// IMPORTANTE: Adicionei a lógica de baixa automática no estoque
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { supabase } from './supabaseconfig'; 
+import Toast from 'react-native-toast-message';
 
-const handleFinalizeSale = async () => {
-  setLoading(true);
-  try {
-    const user = await authService.getCurrentUser();
-    
-    // 1. Criar a Venda
-    const { data: sale, error: saleErr } = await supabase
-      .from('sales')
-      .insert([{
-        user_id: user.id,
-        type: saleType,
-        customer_id: selectedCustomer?.id || null,
-        payment_method: paymentMethod,
-        total_amount: getTotal(),
-        status: 'completed'
-      }])
-      .select().single();
+export default function NewSaleScreen({ navigation }) {
+  const [valor, setValor] = useState('');
 
-    if (saleErr) throw saleErr;
-
-    // 2. Registrar Itens e Baixar Estoque
-    for (const item of cart) {
-      await supabase.from('sale_items').insert({
-        sale_id: sale.id,
-        product_id: item.id,
-        quantity: item.quantity,
-        unit_price: item.sale_price,
-        total_price: item.sale_price * item.quantity
-      });
-
-      // Baixa automática no estoque
-      const { data: prod } = await supabase.from('products').select('stock_qty').eq('id', item.id).single();
-      await supabase.from('products').update({ stock_qty: prod.stock_qty - item.quantity }).eq('id', item.id);
+  const salvarVenda = async () => {
+    const { error } = await supabase.from('vendas').insert([{ valor: parseFloat(valor) }]);
+    if (error) Toast.show({ type: 'error', text1: 'Erro ao salvar' });
+    else {
+      Toast.show({ type: 'success', text1: 'Sucesso!' });
+      navigation.goBack();
     }
+  };
 
-    // 3. Se for fiado, atualiza o saldo do cliente
-    if (saleType === 'fiado' && selectedCustomer) {
-      const { data: cust } = await supabase.from('customers').select('balance').eq('id', selectedCustomer.id).single();
-      await supabase.from('customers').update({ balance: (cust.balance || 0) + getTotal() }).eq('id', selectedCustomer.id);
-    }
-
-    alert("Venda realizada com sucesso!");
-    navigation.goBack();
-  } catch (error) {
-    alert("Erro: " + error.message);
-  } finally {
-    setLoading(false);
-  }
-};
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Nova Venda</Text>
+      <TextInput style={styles.input} placeholder="Valor (R$)" placeholderTextColor="#666" keyboardType="numeric" value={valor} onChangeText={setValor} />
+      <TouchableOpacity style={styles.button} onPress={salvarVenda}>
+        <Text style={styles.buttonText}>Confirmar Venda</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#0f0f1a', padding: 20, paddingTop: 60 },
+  title: { fontSize: 24, color: '#fff', marginBottom: 20 },
+  input: { backgroundColor: '#1e1e2e', color: '#fff', padding: 15, borderRadius: 10, marginBottom: 20 },
+  button: { backgroundColor: '#7c3aed', padding: 15, borderRadius: 10, alignItems: 'center' },
+  buttonText: { color: '#fff', fontWeight: 'bold' }
+});
