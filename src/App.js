@@ -4,6 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+// Telas
 import LoginScreen from './loginscreen';
 import RegisterScreen from './registerscreen';
 import DashboardScreen from './dashboardscreen';
@@ -45,7 +46,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0f0f1a',
     width: '100%',
-    // Corrige a tela preta no navegador
+    // Corrige a tela preta no navegador forçando a altura da janela
     height: Platform.OS === 'web' ? '100vh' : '100%',
   },
 });
