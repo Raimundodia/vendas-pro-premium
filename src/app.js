@@ -1,8 +1,8 @@
 import React from 'react';
+import { View, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { View, StyleSheet } from 'react-native'; // Importe View e StyleSheet
 
 import LoginScreen from './loginscreen';
 import RegisterScreen from './registerscreen';
@@ -16,8 +16,8 @@ const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
-    <SafeAreaProvider style={{ flex: 1 }}> 
-      <View style={styles.container}> 
+    <SafeAreaProvider style={{ flex: 1, backgroundColor: '#0f0f1a' }}>
+      <View style={styles.container}>
         <NavigationContainer>
           <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
             <Stack.Screen name="Login" component={LoginScreen} />
@@ -37,6 +37,8 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f0f1a', // Garante que o fundo escuro apareça
+    backgroundColor: '#0f0f1a',
+    width: '100%',
+    height: '100%',
   },
 });
