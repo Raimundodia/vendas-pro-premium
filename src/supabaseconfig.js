@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = 'https://seu-projeto.supabase.co';
-const supabaseAnonKey = 'sua-chave-aqui';
+// Verifique se as suas chaves estão corretas aqui
+const supabaseUrl = 'SUA_URL_AQUI'; 
+const supabaseAnonKey = 'SUA_KEY_AQUI';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
