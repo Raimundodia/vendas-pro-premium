@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Platform } from 'react-native'; // Adicionado Platform
+import { View, StyleSheet, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -16,14 +16,14 @@ const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
-    <SafeAreaProvider style={styles.safeArea}>
+    <SafeAreaProvider style={{ flex: 1, backgroundColor: '#0f0f1a' }}>
       <View style={styles.container}>
         <NavigationContainer>
           <Stack.Navigator 
             initialRouteName="Login" 
             screenOptions={{ 
               headerShown: false,
-              contentStyle: { backgroundColor: '#0f0f1a' } // Força o fundo da navegação
+              contentStyle: { backgroundColor: '#0f0f1a' } 
             }}
           >
             <Stack.Screen name="Login" component={LoginScreen} />
@@ -41,15 +41,11 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#0f0f1a',
-  },
   container: {
     flex: 1,
     backgroundColor: '#0f0f1a',
-    // O pulo do gato: No Web, usamos vh (view height) para garantir 100% da tela
-    height: Platform.OS === 'web' ? '100vh' : '100%', 
     width: '100%',
+    // Corrige a tela preta no navegador
+    height: Platform.OS === 'web' ? '100vh' : '100%',
   },
 });
