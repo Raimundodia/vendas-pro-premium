@@ -3,7 +3,6 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-// Telas
 import LoginScreen from './loginscreen';
 import RegisterScreen from './registerscreen';
 import DashboardScreen from './dashboardscreen';
