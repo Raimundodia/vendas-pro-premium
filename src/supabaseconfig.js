@@ -1,17 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-client';
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || 'SUA_URL_AQUI';
+const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY || 'SUA_CHAVE_AQUI';
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-export const authService = {
-  async signIn(email, password) {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    return { success: !error, data, error: error?.message };
-  },
-  async getCurrentUser() {
-    const { data: { user } } = await supabase.auth.getUser();
-    return user;
-  }
-};
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
