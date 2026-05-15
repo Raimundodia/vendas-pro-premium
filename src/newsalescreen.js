@@ -18,7 +18,7 @@ export default function NewSaleScreen({ navigation }) {
         .from('vendas')
         .insert([{ produto: product, valor: parseFloat(value.replace(',', '.')) }]);
       if (error) throw error;
-      alert('Venda registrada!');
+      alert('Venda salva com sucesso!');
       navigation.goBack();
     } catch (e) {
       alert(e.message);
@@ -33,7 +33,7 @@ export default function NewSaleScreen({ navigation }) {
       <TextInput style={styles.input} placeholder="Produto" placeholderTextColor="#666" value={product} onChangeText={setProduct} />
       <TextInput style={styles.input} placeholder="Valor" placeholderTextColor="#666" keyboardType="numeric" value={value} onChangeText={setValue} />
       <TouchableOpacity style={styles.button} onPress={handleSaveSale} disabled={loading}>
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Confirmar</Text>}
+        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Salvar Venda</Text>}
       </TouchableOpacity>
     </ScrollView>
   );
