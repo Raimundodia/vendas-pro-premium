@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './app'; // Apontando para o seu app.js minúsculo
+import App from './app'; 
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
