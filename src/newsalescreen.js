@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
-// A CORREÇÃO ESTÁ NESTA LINHA ABAIXO (DEVE SER ./):
+// A LINHA ABAIXO É A QUE ESTÁ DANDO ERRO NO SEU BUILD. ESTA É A VERSÃO CERTA:
 import { supabase } from './supabaseconfig'; 
 import Toast from 'react-native-toast-message';
 
@@ -16,7 +16,6 @@ export default function NewSaleScreen({ navigation }) {
     }
     setLoading(true);
     
-    // Tenta salvar a venda no banco de dados
     const { error } = await supabase
       .from('vendas')
       .insert([{ produto: product, valor: parseFloat(value.replace(',', '.')) }]);
@@ -24,7 +23,7 @@ export default function NewSaleScreen({ navigation }) {
     if (error) {
       Toast.show({ type: 'error', text1: 'Erro ao salvar', text2: error.message });
     } else {
-      Toast.show({ type: 'success', text1: 'Venda registrada com sucesso!' });
+      Toast.show({ type: 'success', text1: 'Venda registrada!' });
       navigation.goBack();
     }
     setLoading(false);
