@@ -23,7 +23,7 @@ export default function LoginScreen({ navigation }) {
       <Text style={styles.title}>Vendas Pro</Text>
       <TextInput style={styles.input} placeholder="E-mail" placeholderTextColor="#666" value={email} onChangeText={setEmail} />
       <TextInput style={styles.input} placeholder="Senha" placeholderTextColor="#666" secureTextEntry value={password} onChangeText={setPassword} />
-      <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
+      <TouchableOpacity style={styles.button} onPress={handleLogin}>
         {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Entrar</Text>}
       </TouchableOpacity>
       <TouchableOpacity onPress={() => navigation.navigate('Register')}>
@@ -34,7 +34,13 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f0f1a', justifyContent: 'center', padding: 20 },
+  container: { 
+    flex: 1, 
+    width: '100%',
+    backgroundColor: '#0f0f1a', 
+    justifyContent: 'center', 
+    padding: 20 
+  },
   title: { fontSize: 32, color: '#fff', textAlign: 'center', marginBottom: 40, fontWeight: 'bold' },
   input: { backgroundColor: '#1e1e2e', color: '#fff', padding: 15, borderRadius: 10, marginBottom: 15 },
   button: { backgroundColor: '#7c3aed', padding: 15, borderRadius: 10, alignItems: 'center' },
